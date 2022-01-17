@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<db:config name="Database_Config" doc:name="Database Config" doc:id="0618e005-c498-4d65-bc45-6621fdae3d44" >
+		<db:my-sql-connection host="localhost" port="3306" user="root" password="root" database="fastgo" />
+	</db:config>
+	<flow name="fastgoFlow" doc:id="3afe4064-76db-4f39-96e9-ea53c06dbd78" >
+		<choice doc:name="Choice" doc:id="8a2dc1b3-b548-42e5-bd29-71657436425f" >
+			<when expression='#[attributes.uriParams.transportType=="land"]'>
+				<db:select doc:name="Select" doc:id="fa1773d8-1d3b-43d6-8307-37bd8356ce7f" config-ref="Database_Config">
+					<db:sql ><![CDATA[SELECT * FROM `fastgo`.land;]]></db:sql>
+				</db:select>
+				<ee:transform doc:name="Transform Message" doc:id="384ce313-4900-49b7-ac16-c882addc5a74" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+
+payload map{
+"originlocation" : {
+"locationcode": $.departureLocationCode
+},
+"destinationlocation":{
+"locationcode": $.destinationLocationCode
+}
+}
+]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</when>
+			<otherwise >
+				<ee:transform doc:name="Transform Message" doc:id="9a7470f5-6f5e-441e-b819-496c1568aab7" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+
+{
+"message": "cannot select required transport type"
+}
+]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</otherwise>
+		</choice>
+	</flow>
+	<flow name="fastgoFlow1" doc:id="0d0b959e-237d-4d88-859f-d6b893aaa0b1" >
+		<choice doc:name="Choice" doc:id="34cbc5cf-07b7-4ae2-b1de-804768066c89" >
+			<when expression='#[attributes.uriParams.transportType == "land"]'>
+				<db:select doc:name="Select" doc:id="babd980c-625f-4328-a223-3e7c4620beb0" config-ref="Database_Config">
+					<db:sql ><![CDATA[select * From fastgo.land where departureLocationCode=:departureLocationCode and destinationLocationCode=:destinationLocationCode;]]></db:sql>
+					<db:input-parameters ><![CDATA[#[{
+departureLocationCode: attributes.queryParams.departureLocationCode,
+destinationLocationCode: attributes.queryParams.destinationLocationCode
+}]]]></db:input-parameters>
+				</db:select>
+				<choice doc:name="Choice" doc:id="e7d0a3af-6a10-4fe7-84cd-695aa0a7f28f" >
+					<when expression="#[((attributes.queryParams.departureLocationCode) != null) and ((attributes.queryParams.destinationLocationCode) != null)]">
+						<choice doc:name="Choice" doc:id="904d5249-84c7-41fd-9f06-498c6f23dca1" >
+							<when expression="#[isEmpty(payload)]">
+								<ee:transform doc:name="Transform Message" doc:id="e45ed0af-a5cd-46ba-b687-72f4e1b2d10d" >
+									<ee:message >
+										<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+"message": "cannot select required transport type"
+}]]></ee:set-payload>
+									</ee:message>
+								</ee:transform>
+							</when>
+							<otherwise >
+								<ee:transform doc:name="Transform Message" doc:id="2361deb4-193d-42d1-9eb4-5a53c84fa886" >
+									<ee:message >
+										<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload map{
+"avaiableseats" : $.availableseats,
+"departuretime": $.departuretime,
+"travelroute": {
+"destinationlocation": {
+"locationcode" : $.destinationLocationCode
+},
+"originlocation":{
+"locationcode": $.departureLocationCode
+}
+}
+}]]></ee:set-payload>
+									</ee:message>
+								</ee:transform>
+							</otherwise>
+						</choice>
+					</when>
+					<otherwise >
+						<ee:transform doc:name="Transform Message" doc:id="74a1f3a6-6c63-4452-b67f-3abfd6fc923b" >
+							<ee:message >
+								<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+
+"message": "cannot select required transport type"
+]]></ee:set-payload>
+							</ee:message>
+						</ee:transform>
+					</otherwise>
+				</choice>
+			</when>
+			<otherwise >
+				<ee:transform doc:name="Transform Message" doc:id="e934204a-0b09-4f9b-8a58-666c4b8a598a" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+"message": "cannot select required transport type"
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</otherwise>
+		</choice>
+	</flow>
+</mule>

@@ -1,0 +1,43 @@
+#%RAML 1.0
+title: transport-systemapi-fastgo
+
+/{transportType}:
+
+   /{transportCompany}:
+
+      /routes:
+        get:
+          headers:
+            transcationId:
+              type: string
+              minLength: 1
+          responses:
+            200:
+              body:
+                application/json:
+                  example: !include sys/fastgoroutes.raml
+      /schedules:
+        get:
+          headers:
+            transcationId:
+              type: string
+              minLength: 1
+          queryParameters:
+            departureLocationCode:
+              required: false
+              type: string
+            destinationLocationCode:
+              required: false
+              type: string
+          responses:
+              200:
+                  body:
+                      application/json:
+                          example: !include sys/schedules.raml 
+      
+                    
+
+                              
+
+
+                    
